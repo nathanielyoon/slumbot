@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# PHOLE ACTION (PRICE)
+# POT!! FFFFFFTTRR
+# PHOLE CHIPS
+
+# PHOLE WINNIN (DIFF)
+# ACTIN FFFFFFTTRR HNDS
+# PHOLE SESSIO (DIFF)
