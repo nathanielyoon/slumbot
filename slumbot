@@ -47,13 +47,13 @@ while true; do
         cards "${BASH_REMATCH[11]}" "${BASH_REMATCH[12]}"
         if [[ ${BASH_REMATCH[10]} ]]; then
             HANDS=${BASH_REMATCH[14]}
-            RESULT=${BASH_REMATCH[13]/%00/0}
+            RESULT=$((BASH_REMATCH[13] / 10))
             [[ ${RESULT:0:1} != - ]] && RESULT="+$RESULT"
-            BOT_RESULT=${BASH_REMATCH[15]/%00/0}
+            BOT_RESULT=$((BASH_REMATCH[15] / 10))
             [[ ${BOT_RESULT:0:1} != - ]] && BOT_RESULT="+$BOT_RESULT"
-            TOTAL=${BASH_REMATCH[16]/%00/0}
+            TOTAL=$((BASH_REMATCH[16] / 10))
             [[ ${TOTAL:0:1} != - ]] && TOTAL="+$TOTAL"
-            BOT_TOTAL=${BASH_REMATCH[17]/%00/0}
+            BOT_TOTAL=$((BASH_REMATCH[17] / 10))
             [[ ${BOT_TOTAL:0:1} != - ]] && BOT_TOTAL="+$BOT_TOTAL"
             printf "\e[1;12f%-5s\e[2;12f%-15s\e[3;12f%-15s" "$HANDS" "$TOTAL ($BOT_TOTAL)" "$RESULT ($BOT_RESULT)"
         else
@@ -101,6 +101,7 @@ while true; do
     else
         printf "\e[10;0f%s" "$BODY"
     fi
+    printf "\e[10;0f%s" "$BODY"
     read -rn1 key
     CHIPS=$((20000 - POT / 2))
     API=act
@@ -114,7 +115,7 @@ while true; do
     k) INCR="b$((POT / 2))" ;;
     l) INCR="b$POT" ;;
     \;) INCR="b$CHIPS" ;;
-    q) break ;;
+    q) exit ;;
     esac
     [[ ${INCR:0:1} == b ]] && [[ ${INCR:1} -gt $CHIPS ]] && INCR="b$CHIPS"
     [[ $INCR ]] && INCR=",\"incr\":\"$INCR\""
