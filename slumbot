@@ -101,7 +101,6 @@ while true; do
     else
         printf "\e[10;0f%s" "$BODY"
     fi
-    printf "\e[10;0f%s" "$BODY"
     read -rn1 key
     CHIPS=$((20000 - POT / 2))
     API=act
