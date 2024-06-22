@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=2034,2155,2162
 
-trap 'printf "\e[9;0f\e[?25h"' 0
+trap 'printf "\e[10;0f\e[0K\e[?25h"' 0
 BUTTON="Ⓓ "
 REGEX='"action":\s*"([/0-9fkcb]*)",\s*"client_pos":\s*([01]),\s*"hole_cards":\s*\[\s*"([2-9TJQKA][shdc])",\s*"([2-9TJQKA][shdc])"\s*\],\s*"board":\s*\[[[:space:]"]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]"]*\],?(\s*"bot_hole_cards":\s*\[\s*"([2-9TJQKA][shdc])",\s*"([2-9TJQKA][shdc])"\s*\],\s*"winnings":\s*(-?[0-9]+),\s*"won_pot":\s*-?[0-9]+,\s*"session_num_hands":\s*(-?[0-9]+),\s*"baseline_winnings":\s*(-?[0-9]+),\s*"session_total":\s*(-?[0-9]+),\s*"session_baseline_total":\s*(-?[0-9]+))?'
 ERROR='"error_msg":\s*"([[:print:]]+)"'
@@ -38,6 +38,8 @@ main() {
     local body=$(curl -s https://slumbot.com/api/new_hand --header "$header" -d {})
     local token="\"token\":\"${body: -38:36}\""
     while true; do
+        # clear message
+        printf "\e[10;0f\e[0K"
         if [[ $body =~ $REGEX ]]; then
             # position
             local position=${BASH_REMATCH[2]}
@@ -110,14 +112,11 @@ main() {
                 pot=$((pot + BASH_REMATCH[1] * 2))
                 action=${action/${BASH_REMATCH[0]}/}
             done
-            printf "\e[5;3f%-5s" "$((pot / 10))"
-
-            # clear message
-            printf "\e[10;0f\e[0K"
+            printf "\e[5;3f%-5s\e[10;0f" "$((pot / 10))"
         elif [[ $body =~ $ERROR ]]; then
             printf "\e[10;0f%s" "${BASH_REMATCH[1]}"
         else
-            printf "\e[10;1f%s" "$body"
+            printf "\e[10;0f%s" "$body"
         fi
         read -rn1 key
         local chips=$((20000 - pot / 2))
