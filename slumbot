@@ -23,8 +23,7 @@ cards() {
         fi
     done
 }
-main() {
-    printf "\e[?25l\e[2J\e[H╭──╮╭──╮
+printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯
 ┌──────┐  ╭──╮╭──╮╭──╮╭──╮╭──╮
@@ -33,110 +32,91 @@ main() {
 ╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯\e[H"
-
-    local header="content-type: application/json"
-    local body=$(curl -s https://slumbot.com/api/new_hand --header "$header" -d {})
-    local token="\"token\":\"${body: -38:36}\""
-    while true; do
-        # clear message
-        printf "\e[10;0f\e[0K"
-        if [[ $body =~ $REGEX ]]; then
-            # position
-            local position=${BASH_REMATCH[2]}
-            printf "\e[2;9f%s\e[8;9f%s" "${BUTTON:$position:1}" "${BUTTON:$((position ^ 1)):1}"
-
-            # hole cards
-            printf "\e[8;2f"
-            cards "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
-
-            # board
-            printf "\e[5;12f"
-            cards "${BASH_REMATCH[5]}" "${BASH_REMATCH[6]}" "${BASH_REMATCH[7]}" "${BASH_REMATCH[8]}" "${BASH_REMATCH[9]}"
-
-            # bot hole cards
-            printf "\e[2;2f"
-            cards "${BASH_REMATCH[11]}" "${BASH_REMATCH[12]}"
-
-            # stats
-            if [[ ${BASH_REMATCH[10]} ]]; then
-                local result=${BASH_REMATCH[13]}
-                local hands=${BASH_REMATCH[14]}
-                local bot_result=${BASH_REMATCH[15]}
-                local total=${BASH_REMATCH[16]}
-                local bot_total=${BASH_REMATCH[17]}
-                [[ ${result:0:1} != - ]] && local result="+$result"
-                [[ ${bot_result:0:1} != - ]] && local bot_result="+$bot_result"
-                [[ ${total:0:1} != - ]] && local total="+$total"
-                [[ ${bot_total:0:1} != - ]] && local bot_total="+$bot_total"
-                printf "\e[1;12f%-5s\e[2;12f%-15s\e[3;12f%-15s" "$hands" "$total ($bot_total)" "$result ($bot_result)"
-            else
-                printf "\e[1;12f\e[0K\e[2;12f\e[0K\e[3;12f\e[0K"
-            fi
-
-            # action
-            local action="/b50b100${BASH_REMATCH[1]}"
-            if [[ $action =~ $CURRENT ]]; then
-                local index=6
-                for match in "${BASH_REMATCH[@]:1}"; do
-                    case $match in
-                    "") local act="" ;;
-                    /)
-                        local lengther=${action//\//}
-                        case $((${#action} - ${#lengther})) in
-                        1) local act="(preflop)" ;;
-                        2) local act="(flop)" ;;
-                        3) local act="(turn)" ;;
-                        4) local act="(river)" ;;
-                        esac
-                        ;;
-                    f) local act=fold ;;
-                    k) local act=check ;;
-                    c) local act=call ;;
-                    *)
-                        local act="${match/b/}"
-                        act=$((act / 10))
-                        ;;
-                    esac
-                    [[ $act ]] && printf "\e[%s;12f> %-9s" "$((++index))" "$act"
-                done
-            fi
-
-            # pot
-            local pot=0
-            local size=150
-            if [[ $action =~ $UNCALLED ]]; then
-                pot=$((pot + BASH_REMATCH[1] + BASH_REMATCH[2]))
-                [[ ${BASH_REMATCH[2]} -gt $size ]] && size=${BASH_REMATCH[2]}
-            fi
-            while [[ $action =~ $CALLED ]]; do
-                pot=$((pot + BASH_REMATCH[1] * 2))
-                action=${action/${BASH_REMATCH[0]}/}
-            done
-            printf "\e[5;3f%-5s\e[10;0f" "$((pot / 10))"
-        elif [[ $body =~ $ERROR ]]; then
-            printf "\e[10;0f%s" "${BASH_REMATCH[1]}"
+BODY=$(curl -s https://slumbot.com/api/new_hand -H content-type:\ application/json -d {})
+TOKEN="\"token\":\"${BODY: -38:36}\""
+while true; do
+    # clear message
+    printf "\e[10;0f\e[0K"
+    if [[ $BODY =~ $REGEX ]]; then
+        POSITION=${BASH_REMATCH[2]}
+        printf "\e[2;9f%s\e[8;9f%s\e[8;2f" "${BUTTON:$POSITION:1}" "${BUTTON:$((POSITION ^ 1)):1}"
+        cards "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
+        printf "\e[5;12f"
+        cards "${BASH_REMATCH[5]}" "${BASH_REMATCH[6]}" "${BASH_REMATCH[7]}" "${BASH_REMATCH[8]}" "${BASH_REMATCH[9]}"
+        printf "\e[2;2f"
+        cards "${BASH_REMATCH[11]}" "${BASH_REMATCH[12]}"
+        if [[ ${BASH_REMATCH[10]} ]]; then
+            HANDS=${BASH_REMATCH[14]}
+            RESULT=${BASH_REMATCH[13]/%00/0}
+            [[ ${RESULT:0:1} != - ]] && RESULT="+$RESULT"
+            BOT_RESULT=${BASH_REMATCH[15]/%00/0}
+            [[ ${BOT_RESULT:0:1} != - ]] && BOT_RESULT="+$BOT_RESULT"
+            TOTAL=${BASH_REMATCH[16]/%00/0}
+            [[ ${TOTAL:0:1} != - ]] && TOTAL="+$TOTAL"
+            BOT_TOTAL=${BASH_REMATCH[17]/%00/0}
+            [[ ${BOT_TOTAL:0:1} != - ]] && BOT_TOTAL="+$BOT_TOTAL"
+            printf "\e[1;12f%-5s\e[2;12f%-15s\e[3;12f%-15s" "$HANDS" "$TOTAL ($BOT_TOTAL)" "$RESULT ($BOT_RESULT)"
         else
-            printf "\e[10;0f%s" "$body"
+            printf "\e[1;12f\e[0K\e[2;12f\e[0K\e[3;12f\e[0K"
         fi
-        read -rn1 key
-        local chips=$((20000 - pot / 2))
-        local path=act
-        local incr=""
-        case $key in
-        a) path=new_hand ;;
-        s) incr=f ;;
-        d) incr=k ;;
-        f) incr=c ;;
-        j) incr="b$((size * 2))" ;;
-        k) incr="b$((pot / 2))" ;;
-        l) incr="b$pot" ;;
-        \;) incr="b$chips" ;;
-        q) return ;;
-        esac
-        [[ ${incr:0:1} == b ]] && [[ ${incr:1} -gt $chips ]] && incr="b$chips"
-        [[ $incr ]] && incr=",\"incr\":\"$incr\""
-        body=$(curl -s "https://slumbot.com/api/$path" --header "$header" -d "{$token$incr}")
-    done
-}
-
-main
+        ACTION="/b50b100${BASH_REMATCH[1]}"
+        if [[ $ACTION =~ $CURRENT ]]; then
+            index=6
+            for match in "${BASH_REMATCH[@]:1}"; do
+                case $match in
+                "") ACT="" ;;
+                /)
+                    lengther=${ACTION//\//}
+                    case $((${#ACTION} - ${#lengther})) in
+                    1) ACT="(preflop)" ;;
+                    2) ACT="(flop)" ;;
+                    3) ACT="(turn)" ;;
+                    4) ACT="(river)" ;;
+                    esac
+                    ;;
+                f) ACT="fold" ;;
+                k) ACT="check" ;;
+                c) ACT="call" ;;
+                *)
+                    ACT="${match/b/}"
+                    ACT=$((ACT / 10))
+                    ;;
+                esac
+                [[ $ACT ]] && printf "\e[%s;12f> %-9s" "$((++index))" "$ACT"
+            done
+        fi
+        POT=0
+        SIZE=150
+        if [[ $ACTION =~ $UNCALLED ]]; then
+            POT=$((POT + BASH_REMATCH[1] + BASH_REMATCH[2]))
+            [[ ${BASH_REMATCH[2]} -gt $SIZE ]] && SIZE=${BASH_REMATCH[2]}
+        fi
+        while [[ $ACTION =~ $CALLED ]]; do
+            POT=$((POT + BASH_REMATCH[1] * 2))
+            ACTION=${ACTION/${BASH_REMATCH[0]}/}
+        done
+        printf "\e[5;3f%-5s\e[10;0f" "$((POT / 10))"
+    elif [[ $BODY =~ $ERROR ]]; then
+        printf "\e[10;0f%s" "${BASH_REMATCH[1]}"
+    else
+        printf "\e[10;0f%s" "$BODY"
+    fi
+    read -rn1 key
+    CHIPS=$((20000 - POT / 2))
+    API=act
+    INCR=""
+    case $key in
+    a) API=new_hand ;;
+    s) INCR=f ;;
+    d) INCR=k ;;
+    f) INCR=c ;;
+    j) INCR="b$((SIZE * 2))" ;;
+    k) INCR="b$((POT / 2))" ;;
+    l) INCR="b$POT" ;;
+    \;) INCR="b$CHIPS" ;;
+    q) break ;;
+    esac
+    [[ ${INCR:0:1} == b ]] && [[ ${INCR:1} -gt $CHIPS ]] && INCR="b$CHIPS"
+    [[ $INCR ]] && INCR=",\"incr\":\"$INCR\""
+    BODY=$(curl -s "https://slumbot.com/api/$API" -H content-type:\ application/json -d "{$TOKEN$INCR}")
+done
