@@ -31,7 +31,7 @@ printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 └──────┘  ╰──╯╰──╯╰──╯╰──╯╰──╯
 ╭──╮╭──╮
 │  ││  │
-╰──╯╰──╯\e[H"
+╰──╯╰──╯"
 BODY=$(curl -s https://slumbot.com/api/new_hand -H content-type:\ application/json -d {})
 TOKEN="\"token\":\"${BODY: -38:36}\""
 while true; do
@@ -88,18 +88,21 @@ while true; do
         printf "\e[10;0f%s" "$BODY"
     fi
     CHIPS=$((20000 - CALLS))
-    read -rn1 key
-    case $key in
-    a) INCR="" ;;
-    s) INCR=f ;;
-    d) INCR=k ;;
-    f) INCR=c ;;
-    j) INCR="b$((${BET_2:-150} * 2))" ;;
-    k) INCR="b$((CALLS + BET_2))" ;;
-    l) INCR="b$(((CALLS + BET_2) * 2))" ;;
-    \;) INCR="b$CHIPS" ;;
-    q) exit ;;
-    esac
+    while read -rn1 key; do
+        case $key in
+        a) INCR="" ;;
+        s) INCR=f ;;
+        d) INCR=k ;;
+        f) INCR=c ;;
+        j) INCR="b$((${BET_2:-150} * 2))" ;;
+        k) INCR="b$((CALLS + BET_2))" ;;
+        l) INCR="b$(((CALLS + BET_2) * 2))" ;;
+        \;) INCR="b$CHIPS" ;;
+        q) exit ;;
+        *) continue ;;
+        esac
+        break
+    done
     [[ ${INCR:0:1} == b && ${INCR:1} -gt $CHIPS ]] && INCR="b$CHIPS"
     if [[ $INCR ]]; then
         INCR=",\"incr\":\"$INCR\""
