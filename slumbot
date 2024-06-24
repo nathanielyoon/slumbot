@@ -24,7 +24,10 @@ cards() {
     done
 }
 log() {
-    printf "\e[11;0f\e[0K%s" "$1"
+    printf "\e[11;0f"
+    for argument; do
+        printf "\e[0K%s\n" "$argument"
+    done
 }
 printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 │  ││  │
@@ -77,10 +80,10 @@ while true; do
         fi
         BETS=0
         CALLS=0
-        LAST=150
+        LAST=""
         if [[ $ACTION =~ $UNCALLED ]]; then
             BETS=$((BETS + BASH_REMATCH[1] + BASH_REMATCH[2]))
-            [[ ${BASH_REMATCH[2]} -gt $LAST ]] && LAST=${BASH_REMATCH[2]}
+            LAST=${BASH_REMATCH[2]}
         fi
         while [[ $ACTION =~ $CALLED ]]; do
             CALLS=$((CALLS + BASH_REMATCH[1]))
@@ -99,7 +102,7 @@ while true; do
         s) INCR=f ;;
         d) INCR=k ;;
         f) INCR=c ;;
-        j) INCR="b$((LAST * 2))" ;;
+        j) INCR="b$((${LAST:-150} * 2))" ;;
         k) INCR="b$((CALLS + LAST))" ;;
         l) INCR="b$(((CALLS + LAST) * 2))" ;;
         \;) INCR="b$CHIPS" ;;
