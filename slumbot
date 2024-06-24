@@ -6,7 +6,7 @@ BUTTON="Ⓓ "
 REGEX='"action":\s*"([/0-9fkcb]*)",\s*"client_pos":\s*([01]),\s*"hole_cards":\s*\[\s*"([2-9TJQKA][shdc])",\s*"([2-9TJQKA][shdc])"\s*\],\s*"board":\s*\[[[:space:]"]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]",]*([2-9TJQKA][shdc])?[[:space:]"]*\],?(\s*"bot_hole_cards":\s*\[\s*"([2-9TJQKA][shdc])",\s*"([2-9TJQKA][shdc])"\s*\],\s*"winnings":\s*(-?[0-9]+),\s*"won_pot":\s*-?[0-9]+,\s*"session_num_hands":\s*(-?[0-9]+),\s*"baseline_winnings":\s*(-?[0-9]+),\s*"session_total":\s*(-?[0-9]+),\s*"session_baseline_total":\s*(-?[0-9]+))?'
 ERROR='"error_msg":\s*"([[:print:]]+?)"'
 RECENT='([/kc]|b[0-9]+)([/kc]|b[0-9]+)([/fkc]|b[0-9]+)$'
-CALLED='b([0-9]+)c/'
+CALLED='b([0-9]+)ck?/'
 UNCALLED='([0-9]+)?b([0-9]+)f?$'
 cards() {
     for argument; do
@@ -23,12 +23,6 @@ cards() {
         fi
     done
 }
-log() {
-    printf "\e[11;0f"
-    for argument; do
-        printf "\e[0K%s\n" "$argument"
-    done
-}
 printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯
@@ -38,7 +32,8 @@ printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 ╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯"
-BODY=$(curl -s https://slumbot.com/api/new_hand -H content-type:\ application/json -d {})
+# BODY=$(curl -s https://slumbot.com/api/new_hand -H content-type:\ application/json -d {})
+BODY='{"old_action": "", "action": "ck/k", "client_pos": 1, "hole_cards": ["Td","2d"], "board": ["Ac","Kc","5c"]}'
 TOKEN="\"token\":\"${BODY: -38:36}\""
 while true; do
     printf "\e[10;0f\e[0K"
@@ -64,6 +59,7 @@ while true; do
             printf "\e[1;12f\e[0K\e[2;12f\e[0K\e[3;12f\e[0K"
         fi
         ACTION="/b50b100${BASH_REMATCH[1]}"
+        printf "\e[11;0f%s" "$ACTION"
         if [[ $ACTION =~ $RECENT ]]; then
             index=6
             for act in "${BASH_REMATCH[@]:1}"; do
