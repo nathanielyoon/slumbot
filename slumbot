@@ -23,6 +23,9 @@ cards() {
         fi
     done
 }
+api() {
+    curl -s "https://slumbot.com/api/$1" -H content-type:\ application/json -d "{$2}"
+}
 printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯
@@ -32,11 +35,23 @@ printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 ╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯"
-BODY=$(curl -s https://slumbot.com/api/new_hand -H content-type:\ application/json -d {})
+while getopts :p:a flag; do
+    case $flag in
+    p) printf "\e[11;0f%s" "$(<"$OPTARG")" ;;
+    a) AUTO=yes ;;
+    *) ;;
+    esac
+done
+BODY=$(api new_hand)
 TOKEN="\"token\":\"${BODY: -38:36}\""
 while true; do
     printf "\e[10;0f\e[0K"
     if [[ $BODY =~ $REGEX ]]; then
+        [[ $AUTO == yes ]] && ! ./auto "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" && {
+            api act "$TOKEN,\"incr\":\"f\""
+            BODY=$(api new_hand "$TOKEN")
+            continue
+        }
         POSITION=${BASH_REMATCH[2]}
         printf "\e[2;9f%s\e[8;9f%s\e[8;2f" "${BUTTON:$POSITION:1}" "${BUTTON:$((POSITION ^ 1)):1}"
         cards "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}"
@@ -86,8 +101,6 @@ while true; do
         printf "\e[5;3f%-5s\e[10;0f" "$((CALLS / 5 + BETS / 10))"
     elif [[ $BODY =~ $ERROR ]]; then
         printf "\e[10;0f%s" "${BASH_REMATCH[1]}"
-    else
-        printf "\e[10;0f%s" "$BODY"
     fi
     CHIPS=$((20000 - CALLS))
     while read -rn1 key; do
@@ -112,5 +125,5 @@ while true; do
     else
         API=new_hand
     fi
-    BODY=$(curl -s "https://slumbot.com/api/$API" -H content-type:\ application/json -d "{$TOKEN$INCR}")
+    BODY=$(api "$API" "$TOKEN$INCR")
 done
