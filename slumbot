@@ -26,6 +26,22 @@ cards() {
 api() {
     curl -s "https://slumbot.com/api/$1" -H content-type:\ application/json -d "{$2}"
 }
+auto() {
+    VALUE_1=${1:0:1}
+    VALUE_2=${2:0:1}
+    if [[ "$VALUE_1" == "$VALUE_2" ]]; then return 1; fi
+    if [[ "${1:1:1}" == "${2:1:1}" ]]; then
+        case $VALUE_1 in
+        A | K) return 1 ;;
+        Q | J) if [[ $VALUE_2 =~ ^[JT98]$ ]]; then return 1; fi ;;
+        T) if [[ $VALUE_2 =~ ^[98]$ ]]; then return 1; fi ;;
+        *) if [[ $((VALUE_1 - VALUE_2)) -lt 3 ]]; then return 1; fi ;;
+        esac
+    else
+        if [[ $VALUE_1 =~ ^A[KQJT9]$|^[KQJ][QJT]$ ]]; then return 1; fi
+    fi
+    return 0
+}
 printf "\e[?25l\e[2J\e[H╭──╮╭──╮
 │  ││  │
 ╰──╯╰──╯
@@ -39,7 +55,7 @@ while getopts :p:a flag; do
     case $flag in
     p) printf "\e[11;0f%s" "$(<"$OPTARG")" ;;
     a) AUTO=yes ;;
-    *) ;;
+    *) exit 1 ;;
     esac
 done
 BODY=$(api new_hand)
@@ -47,8 +63,15 @@ TOKEN="\"token\":\"${BODY: -38:36}\""
 while true; do
     printf "\e[10;0f\e[0K"
     if [[ $BODY =~ $REGEX ]]; then
-        [[ $AUTO == yes ]] && ! ./auto "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" && {
-            api act "$TOKEN,\"incr\":\"f\""
+        [[ $AUTO == yes ]] && auto "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" && {
+            printf "\e[8;2f"
+            cards "" ""
+            printf "\e[5;2f      \e[4C"
+            cards "" "" "" "" ""
+            printf "\e[2;2f"
+            cards "" ""
+            printf "\e[1;9f\e[0K\e[2;9f\e[0K\e[3;9f\e[0K\e[7;9f\e[0K\e[8;9f\e[0K\e[9;9f\e[0K"
+            api act "$TOKEN,\"incr\":\"f\"" >/dev/null
             BODY=$(api new_hand "$TOKEN")
             continue
         }
