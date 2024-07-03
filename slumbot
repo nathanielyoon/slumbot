@@ -226,7 +226,7 @@ while true; do
                 ;;
             $'\x1b')
                 printf "\e[8;14f\e[0K"
-                SIZE=0
+                SIZE=""
                 continue
                 ;;
             q) exit ;;
